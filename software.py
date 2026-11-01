@@ -10,7 +10,7 @@ For each source the board builds ONE top-100 list for the last 12 months, plus a
   * All        = the all-time top 100
 
   github  -> data/github.json   most stars
-  steam   -> data/steam.json    most played right now
+  steam   -> data/steam.json    most played right now (Steam's Most Played chart, top 100 only)
   itunes  -> data/itunes.json   Apple top free chart (position)
 
 Usage:  python software.py [all|github|steam|itunes]
@@ -31,9 +31,6 @@ STATE_DIR = "state"
 UA = {"User-Agent": "software-board/1.0 (+https://github.com)"}
 
 GITHUB_MIN_STARS = int(os.environ.get("GITHUB_MIN_STARS", "100"))             # repos with fewer stars are left out
-STEAM_MIN_PLAYERS = int(os.environ.get("STEAM_MIN_PLAYERS", "200"))           # new games with fewer players in game right now are left out
-STEAM_USE_NEW_RELEASES = os.environ.get("STEAM_USE_NEW_RELEASES", "1") != "0"  # 0 = only the Most Played chart (very few new games)
-STEAM_NEW_CANDIDATES = int(os.environ.get("STEAM_NEW_CANDIDATES", "400"))     # newly released games checked for player counts
 STEAM_DETAIL_BUDGET = int(os.environ.get("STEAM_DETAIL_BUDGET", "250"))      # Steam store lookups per run (cached afterwards)
 ITUNES_CHART_SIZE = int(os.environ.get("ITUNES_CHART_SIZE", "200"))          # chart positions read from Apple
 
@@ -228,50 +225,6 @@ def steam_chart():
     return {}
 
 
-def _walk(obj, key, out):
-    """Collect every value stored under `key` anywhere in a JSON structure."""
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            if k == key and isinstance(v, (int, str)):
-                out.append(int(v))
-            else:
-                _walk(v, key, out)
-    elif isinstance(obj, list):
-        for v in obj:
-            _walk(v, key, out)
-
-
-def steam_new_appids():
-    """Appids from Steam's Top New Releases pages, newest month first. Used only to find candidates."""
-    try:
-        d = get_json("https://api.steampowered.com/ISteamChartsService/GetTopReleasesPages/v1/")
-    except Exception as ex:
-        print(f"  top releases failed: {ex}")
-        return []
-    pages = (d.get("response") or {}).get("pages") or []
-    pages = sorted(pages, key=lambda p: p.get("start_of_month", 0), reverse=True)[:WINDOWS[-1] + 1]
-    ids = []
-    for p in pages:
-        found = []
-        _walk(p.get("item_ids", p), "appid", found)
-        ids += found
-    seen, out = set(), []
-    for i in ids:
-        if i not in seen:
-            seen.add(i)
-            out.append(i)
-    return out
-
-
-def steam_players(appid):
-    try:
-        d = get_json("https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/",
-                     params={"appid": appid}, retries=2, pause=2)
-        return int((d.get("response") or {}).get("player_count") or 0)
-    except Exception:
-        return None
-
-
 def steam_details(appid):
     try:
         d = get_json("https://store.steampowered.com/api/appdetails",
@@ -304,19 +257,6 @@ def fetch_steam():
     print(f"  steam chart: {len(players)} games")
     today = NOW.strftime("%Y-%m-%d")
     oldest = cutoff(12)
-
-    # Games released in the last year that are not on the chart need a player count so they can be ranked.
-    # The Top New Releases list is only used to find candidates; the ranking is by real players in game.
-    if STEAM_USE_NEW_RELEASES:
-        extra = [a for a in steam_new_appids() if a not in players]
-        extra = [a for a in extra if not (cache.get(str(a), {}).get("date") and cache[str(a)]["date"] < oldest)]
-        extra = extra[:STEAM_NEW_CANDIDATES]
-        print(f"  steam new releases to count: {len(extra)}")
-        for a in extra:
-            n = steam_players(a)
-            if n is not None:
-                players[a] = n
-            time.sleep(0.25)
 
     # release date, description and header image come from the store (cached forever once found)
     budget = STEAM_DETAIL_BUDGET
@@ -351,7 +291,7 @@ def fetch_steam():
     for i, g in enumerate(games[:TOP_N], 1):      # All: most played right now, any release date
         g["ranks"]["0"] = i
     print(f"  steam all time: {min(len(games), TOP_N)} games")
-    year = [g for g in games if g["date"] and oldest <= g["date"] <= today and g["metric"] >= STEAM_MIN_PLAYERS][:TOP_N]
+    year = [g for g in games if g["date"] and oldest <= g["date"] <= today][:TOP_N]
     for i, g in enumerate(year, 1):
         for w in WINDOWS:                         # keep the 12-month rank in every window the game launched in
             if g["date"] >= cutoff(w):

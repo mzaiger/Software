@@ -57,14 +57,11 @@ Run locally: `pip install -r requirements.txt`, `python software.py all`, then `
 | `STEAM_DETAIL_BUDGET` | 250 | Steam store lookups per run (results are cached, so the first runs fill in gradually) |
 | `ITUNES_CHART_SIZE` | 200 | Chart positions read from Apple |
 | `GITHUB_MIN_STARS` | 100 | New repos with fewer stars are left out of the month windows |
-| `STEAM_MIN_PLAYERS` | 200 | New Steam games with fewer players in game right now are left out |
-| `STEAM_NEW_CANDIDATES` | 400 | Recently released Steam games checked for player counts each run |
-| `STEAM_USE_NEW_RELEASES` | 1 | Set to 0 to use only Steam's Most Played chart (very few new games) |
 
 ## Limits and notes
 
 * **A source that fails keeps its previous JSON file**, and the other sources still update.
 * **Apple:** only apps inside the chart can appear, so short windows can have few apps. The ranking shown is the real chart position, which can be above 100 because 200 positions are read.
-* **Steam:** to find games released in the last year beyond the Most Played chart, the script reads Steam's Top New Releases list for candidates, gets each one's players in game now, and ranks by that (games under `STEAM_MIN_PLAYERS` are dropped). The list only finds candidates; it never decides the rank. The first few runs fill in each game's release date and description, so the year's list grows over those runs.
+* **Steam:** only games on Steam's Most Played chart (top 100 by players right now) are used. The 12-month list is the games on that chart released in the last year, so it holds well under 100 and the 1 to 6 month views are smaller still. The first run looks up each game's release date and description (about 3 minutes); later runs only look up newcomers.
 * **GitHub:** `created_at` is the repo creation date, not necessarily when the software launched.
 * The Steam and Apple endpoints are not formally documented. The script was tested against mock responses only, so check the first workflow run's log.
