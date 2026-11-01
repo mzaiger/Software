@@ -24,6 +24,7 @@ DATA_DIR = "data"
 STATE_DIR = "state"
 UA = {"User-Agent": "software-board/1.0 (+https://github.com)"}
 
+GITHUB_WINDOW_TOP = int(os.environ.get("GITHUB_WINDOW_TOP", "20"))           # repos kept per 1/2/3/6/12 month window (All keeps TOP_N)
 STEAM_NEW_CANDIDATES = int(os.environ.get("STEAM_NEW_CANDIDATES", "400"))   # newly released games checked for player counts
 STEAM_DETAIL_BUDGET = int(os.environ.get("STEAM_DETAIL_BUDGET", "250"))      # Steam store lookups per run (cached afterwards)
 ITUNES_CHART_SIZE = int(os.environ.get("ITUNES_CHART_SIZE", "200"))          # chart positions read from Apple
@@ -90,9 +91,9 @@ def fetch_github():
     items = {}
     for w in [*WINDOWS, 0]:                     # 0 = All: most-starred repos of any age
         data = get_json("https://api.github.com/search/repositories",
-                        params={"q": f"created:>={cutoff(w)}" if w else "stars:>20000", "sort": "stars", "order": "desc", "per_page": TOP_N},
+                        params={"q": f"created:>={cutoff(w)}" if w else "stars:>20000", "sort": "stars", "order": "desc", "per_page": TOP_N if w == 0 else GITHUB_WINDOW_TOP},
                         headers=headers)
-        for i, repo in enumerate((data.get("items") or [])[:TOP_N], 1):
+        for i, repo in enumerate((data.get("items") or [])[:TOP_N if w == 0 else GITHUB_WINDOW_TOP], 1):
             key = repo["full_name"]
             it = items.get(key)
             if not it:
