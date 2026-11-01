@@ -271,11 +271,10 @@ def fetch_steam():
         time.sleep(1.6)                           # the store API allows roughly 200 requests per 5 minutes
     json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 
-    skip_types = {"dlc", "demo", "mod", "music", "video", "episode", "series", "advertising"}
     games = []
     for a, n in players.items():
         c = cache.get(str(a))
-        if not c or c.get("skip") or not c.get("name") or c.get("type") in skip_types:
+        if not c or c.get("skip") or not c.get("name"):      # keep everything on the chart, whatever Steam calls its type
             continue
         games.append({
             "id": str(a),
