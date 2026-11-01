@@ -126,7 +126,7 @@
     <div class="updated-row"><span id="lastUpdated">Last updated: —</span><button class="refresh-btn" id="refreshBtn" type="button">Refresh</button></div>
   </div>
   <h1>Software Board</h1>
-  <p class="sub">New software in each window (top 20 GitHub repos per month window; top 100 for the rest and for All), ranked by <b>GitHub stars</b>, <b>Steam players right now</b>, or <b>Apple App Store chart position</b>. Pick a source, choose how far back to look by launch date (1 to 12 months, or All for the all-time top 100), switch between tiles and rows, and sort by ranking or newest.</p>
+  <p class="sub">The top 100 new software of the last 12 months, plus an all-time top 100, ranked by <b>GitHub stars</b>, <b>Steam players right now</b>, or <b>Apple App Store chart position</b>. Pick a source, choose when it launched (1, 2, 3, 6 or 12 months, which shows that period&rsquo;s items from the year&rsquo;s top 100, or All for all time), switch between tiles and rows, and sort by ranking or newest.</p>
 </header>
 <main>
   <div class="controls">
@@ -144,18 +144,19 @@
   </div>
   <p class="count" id="count"></p>
   <div id="out"></div>
-  <p class="foot">Data from the free, keyless <a href="https://docs.github.com/en/rest/search/search#search-repositories">GitHub REST API</a>, <a href="https://steamcommunity.com/dev">Steam</a> charts and store APIs, and Apple&rsquo;s iTunes feeds and lookup API. All is the all-time top 100 for that source, whatever the launch date. GitHub date is the repository creation date, which is not always when the software first shipped. Steam &ldquo;Most Played&rdquo; is players in game at the last update. Apple ranking is the position in the US Top Free Apps chart; only apps that are in the chart can appear. GitHub, Steam and Apple are not affiliated with this site.</p>
+  <p class="foot">Data from the free, keyless <a href="https://docs.github.com/en/rest/search/search#search-repositories">GitHub REST API</a>, <a href="https://steamcommunity.com/dev">Steam</a> charts and store APIs, and Apple&rsquo;s iTunes feeds and lookup API. Rank is the position in the top 100 for the last 12 months, so a 1 month view can show items like #34 or #71. All is the all-time top 100 for that source, whatever the launch date. GitHub date is the repository creation date, which is not always when the software first shipped. Steam &ldquo;Most Played&rdquo; is players in game at the last update; games outside Steam&rsquo;s Most Played chart are found through its Top New Releases list and ranked by players, and games with very few players are left out. Apple ranking is the position in the US Top Free Apps chart; only apps that are in the chart can appear. GitHub, Steam and Apple are not affiliated with this site.</p>
 </main>
 <script>
 const SOURCES = [
-  { k:'github', l:'GitHub', imgClass:'github', hint:'Most stars among repositories created in the window',
+  { k:'github', l:'GitHub', imgClass:'github', hint:'Most stars among repositories created in the last 12 months',
     metric: it => `<b>★ ${fmtNum(it.metric)}</b> stars`, rowMetric: it => `★ ${fmtNum(it.metric)} stars`, open:'Open on GitHub', short:'GitHub', empty:'repos' },
-  { k:'steam',  l:'Steam',  imgClass:'steam',  hint:'Most players in game now among games released in the window',
+  { k:'steam',  l:'Steam',  imgClass:'steam',  hint:'Most players in game now among games released in the last 12 months',
     metric: it => `<b>🎮 ${fmtNum(it.metric)}</b> playing`, rowMetric: it => `🎮 ${fmtNum(it.metric)} playing`, open:'Open on Steam', short:'Steam', empty:'games' },
-  { k:'itunes', l:'iTunes', imgClass:'itunes', hint:'Position in Apple’s Top Free Apps chart among apps released in the window',
+  { k:'itunes', l:'iTunes', imgClass:'itunes', hint:'Position in Apple’s Top Free Apps chart among apps released in the last 12 months',
     metric: it => `<b>Apple #${it.metric}</b> chart`, rowMetric: it => `Apple #${it.metric}`, open:'Open on App Store', short:'App Store', empty:'apps' },
 ];
 const MONTHS = [1, 2, 3, 6, 12, 0];   // 0 = All
+const rankTip = () => months ? 'Rank in the top 100 of the last 12 months' : 'Rank in the all-time top 100';
 const $ = id => document.getElementById(id);
 const ESC = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ESC[c]);
@@ -202,7 +203,7 @@ function tileHtml(it, S) {
   return `<article class="card">
     <div class="thumb-wrap ${S.imgClass}">${url ? `<a class="thumb-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(S.open)}">${thumb(it)}</a>` : thumb(it)}
       <label class="fav-toggle" title="Favorite"><input type="checkbox" class="fav-input" data-key="${esc(key)}" ${favs.has(key) ? 'checked' : ''}><span class="fav-star">★</span></label>
-      ${it.rank ? `<div class="rank-pill" title="${esc(S.hint)}">#${it.rank}</div>` : ''}
+      ${it.rank ? `<div class="rank-pill" title="${esc(rankTip())}">#${it.rank}</div>` : ''}
     </div>
     <div class="body">
       <p class="title">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>` : esc(it.title)}</p>
@@ -219,7 +220,7 @@ function rowHtml(it, S) {
   return `<div class="row-item">
     <label class="row-fav" title="Favorite"><input type="checkbox" class="fav-input" data-key="${esc(key)}" ${favs.has(key) ? 'checked' : ''}><span class="fav-star">★</span></label>
     <div class="row-thumb">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(S.open)}">${thumb(it)}</a>` : thumb(it)}</div>
-    <span class="row-rank" title="${esc(S.hint)}">${it.rank ? '#' + it.rank : '—'}</span>
+    <span class="row-rank" title="${esc(rankTip())}">${it.rank ? '#' + it.rank : '—'}</span>
     <span class="row-title">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>` : esc(it.title)}</span>
     <span class="row-desc">${esc(it.desc || '—')}</span>
     <span class="row-date">${esc(fmtDate(it.date))}</span>

@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """Software Board data builder.
 
-Pulls top-100 rankings from three free, no-key sources and writes JSON for index.html:
+Pulls rankings from three free, no-key sources and writes JSON for index.html.
 
-  github  -> data/github.json   most stars, repos created in the last 1/2/3/6/12 months
-  steam   -> data/steam.json    most played right now, games released in the last 1/2/3/6/12 months
-  itunes  -> data/itunes.json   Apple top free chart position, apps released in the last 1/2/3/6/12 months
+For each source the board builds ONE top-100 list for the last 12 months, plus an all-time top 100:
+  * 12 Months  = that top-100 list
+  * 1/2/3/6 Months = only the items from that list that launched in that period
+    (each item keeps its rank in the 12-month top 100)
+  * All        = the all-time top 100
+
+  github  -> data/github.json   most stars
+  steam   -> data/steam.json    most played right now
+  itunes  -> data/itunes.json   Apple top free chart (position)
 
 Usage:  python software.py [all|github|steam|itunes]
 """
@@ -18,14 +24,16 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 
-WINDOWS = [1, 2, 3, 6, 12]          # months; rank key "0" is the All window (any launch date)
+WINDOWS = [1, 2, 3, 6, 12]          # months; the 12-month list is the base. Rank key "0" is the All window (any launch date)
 TOP_N = 100
 DATA_DIR = "data"
 STATE_DIR = "state"
 UA = {"User-Agent": "software-board/1.0 (+https://github.com)"}
 
-GITHUB_WINDOW_TOP = int(os.environ.get("GITHUB_WINDOW_TOP", "20"))           # repos kept per 1/2/3/6/12 month window (All keeps TOP_N)
-STEAM_NEW_CANDIDATES = int(os.environ.get("STEAM_NEW_CANDIDATES", "400"))   # newly released games checked for player counts
+GITHUB_MIN_STARS = int(os.environ.get("GITHUB_MIN_STARS", "100"))             # repos with fewer stars are left out
+STEAM_MIN_PLAYERS = int(os.environ.get("STEAM_MIN_PLAYERS", "200"))           # new games with fewer players in game right now are left out
+STEAM_USE_NEW_RELEASES = os.environ.get("STEAM_USE_NEW_RELEASES", "1") != "0"  # 0 = only the Most Played chart (very few new games)
+STEAM_NEW_CANDIDATES = int(os.environ.get("STEAM_NEW_CANDIDATES", "400"))     # newly released games checked for player counts
 STEAM_DETAIL_BUDGET = int(os.environ.get("STEAM_DETAIL_BUDGET", "250"))      # Steam store lookups per run (cached afterwards)
 ITUNES_CHART_SIZE = int(os.environ.get("ITUNES_CHART_SIZE", "200"))          # chart positions read from Apple
 
@@ -83,39 +91,53 @@ def save(name, source, metric_label, items):
 
 # --------------------------------------------------------------------------- GitHub
 def fetch_github():
-    """One search per window: repos created since the cutoff, sorted by stars, top 100."""
+    """Two searches: top 100 repos created in the last 12 months, and the all-time top 100."""
     headers = {"Accept": "application/vnd.github+json"}
     token = os.environ.get("GITHUB_TOKEN")      # optional; the Actions runner supplies one automatically
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    items = {}
-    for w in [*WINDOWS, 0]:                     # 0 = All: most-starred repos of any age
+
+    def search(q):
         data = get_json("https://api.github.com/search/repositories",
-                        params={"q": f"created:>={cutoff(w)}" if w else "stars:>20000", "sort": "stars", "order": "desc", "per_page": TOP_N if w == 0 else GITHUB_WINDOW_TOP},
-                        headers=headers)
-        for i, repo in enumerate((data.get("items") or [])[:TOP_N if w == 0 else GITHUB_WINDOW_TOP], 1):
-            key = repo["full_name"]
-            it = items.get(key)
-            if not it:
-                owner = repo.get("owner") or {}
-                desc = clip(repo.get("description"))
-                if not desc and repo.get("topics"):
-                    desc = "Topics: " + ", ".join(repo["topics"][:6])
-                it = items[key] = {
-                    "id": key,
-                    "title": key,
-                    "desc": desc or "No description provided.",
-                    # org avatar for org-owned repos; owner avatar otherwise; social card if neither exists
-                    "image": owner.get("avatar_url") or f"https://opengraph.githubassets.com/1/{key}",
-                    "date": (repo.get("created_at") or "")[:10],
-                    "url": repo.get("html_url") or f"https://github.com/{key}",
-                    "metric": repo.get("stargazers_count", 0),
-                    "ranks": {},
-                }
-            it["metric"] = repo.get("stargazers_count", it["metric"])
-            it["ranks"][str(w)] = i
-        print(f"  github {w}mo: {len(data.get('items') or [])} repos")
+                        params={"q": q, "sort": "stars", "order": "desc", "per_page": TOP_N}, headers=headers)
         time.sleep(7 if not token else 2)       # unauthenticated search allows 10 requests a minute
+        return (data.get("items") or [])[:TOP_N]
+
+    items = {}
+
+    def upsert(repo):
+        key = repo["full_name"]
+        if key not in items:
+            owner = repo.get("owner") or {}
+            desc = clip(repo.get("description"))
+            if not desc and repo.get("topics"):
+                desc = "Topics: " + ", ".join(repo["topics"][:6])
+            items[key] = {
+                "id": key,
+                "title": key,
+                "desc": desc or "No description provided.",
+                # org avatar for org-owned repos; owner avatar otherwise; social card if neither exists
+                "image": owner.get("avatar_url") or f"https://opengraph.githubassets.com/1/{key}",
+                "date": (repo.get("created_at") or "")[:10],
+                "url": repo.get("html_url") or f"https://github.com/{key}",
+                "metric": repo.get("stargazers_count", 0),
+                "ranks": {},
+            }
+        items[key]["metric"] = repo.get("stargazers_count", items[key]["metric"])
+        return items[key]
+
+    year = search(f"created:>={cutoff(12)} stars:>={GITHUB_MIN_STARS}")
+    for i, repo in enumerate(year, 1):
+        it = upsert(repo)
+        for w in WINDOWS:                       # keep the 12-month rank in every window the repo launched in
+            if it["date"] >= cutoff(w):
+                it["ranks"][str(w)] = i
+    print(f"  github 12 months: {len(year)} repos; in last month: {sum(1 for i in items.values() if '1' in i['ranks'])}")
+
+    alltime = search("stars:>20000")
+    for i, repo in enumerate(alltime, 1):
+        upsert(repo)["ranks"]["0"] = i
+    print(f"  github all time: {len(alltime)} repos")
     save("github.json", "github", "stars", list(items.values()))
 
 
@@ -168,12 +190,12 @@ def fetch_itunes():
         })
     for a in apps[:TOP_N]:                        # All: the top 100 chart positions, any release date
         a["ranks"]["0"] = a["metric"]
-    for w in WINDOWS:
-        c = cutoff(w)
-        inwin = [a for a in apps if a["date"] and a["date"] >= c]      # chart order is already best first
-        for i, a in enumerate(inwin[:TOP_N], 1):
-            a["ranks"][str(w)] = i
-        print(f"  itunes {w}mo: {len(inwin)} apps in the top {len(chart)}")
+    year = [a for a in apps if a["date"] and a["date"] >= cutoff(12)][:TOP_N]     # chart order is already best first
+    for i, a in enumerate(year, 1):
+        for w in WINDOWS:                         # keep the 12-month rank in every window the app launched in
+            if a["date"] >= cutoff(w):
+                a["ranks"][str(w)] = i
+    print(f"  itunes 12 months: {len(year)} apps in the top {len(chart)}; in last month: {sum(1 for a in year if '1' in a['ranks'])}")
     save("itunes.json", "itunes", "apple ranking", [a for a in apps if a["ranks"]])
 
 
@@ -191,19 +213,6 @@ def parse_steam_date(s):
     return ""
 
 
-def _walk(obj, key, out):
-    """Collect every value stored under `key` anywhere in a JSON structure."""
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            if k == key and isinstance(v, (int, str)):
-                out.append(int(v))
-            else:
-                _walk(v, key, out)
-    elif isinstance(obj, list):
-        for v in obj:
-            _walk(v, key, out)
-
-
 def steam_chart():
     """Most played right now: {appid: players}."""
     for url, field in (("https://api.steampowered.com/ISteamChartsService/GetGamesByConcurrentPlayers/v1/", "concurrent_in_game"),
@@ -219,8 +228,21 @@ def steam_chart():
     return {}
 
 
+def _walk(obj, key, out):
+    """Collect every value stored under `key` anywhere in a JSON structure."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == key and isinstance(v, (int, str)):
+                out.append(int(v))
+            else:
+                _walk(v, key, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _walk(v, key, out)
+
+
 def steam_new_appids():
-    """Appids from Steam's Top New Releases pages, newest month first."""
+    """Appids from Steam's Top New Releases pages, newest month first. Used only to find candidates."""
     try:
         d = get_json("https://api.steampowered.com/ISteamChartsService/GetTopReleasesPages/v1/")
     except Exception as ex:
@@ -280,19 +302,21 @@ def fetch_steam():
 
     players = steam_chart()
     print(f"  steam chart: {len(players)} games")
-    oldest = cutoff(WINDOWS[-1])
     today = NOW.strftime("%Y-%m-%d")
+    oldest = cutoff(12)
 
-    # newly released games that are not on the chart still need a player count
-    extra = [a for a in steam_new_appids() if a not in players]
-    extra = [a for a in extra if not (cache.get(str(a), {}).get("date") and cache[str(a)]["date"] < oldest)]
-    extra = extra[:STEAM_NEW_CANDIDATES]
-    print(f"  steam new releases to count: {len(extra)}")
-    for a in extra:
-        n = steam_players(a)
-        if n is not None:
-            players[a] = n
-        time.sleep(0.25)
+    # Games released in the last year that are not on the chart need a player count so they can be ranked.
+    # The Top New Releases list is only used to find candidates; the ranking is by real players in game.
+    if STEAM_USE_NEW_RELEASES:
+        extra = [a for a in steam_new_appids() if a not in players]
+        extra = [a for a in extra if not (cache.get(str(a), {}).get("date") and cache[str(a)]["date"] < oldest)]
+        extra = extra[:STEAM_NEW_CANDIDATES]
+        print(f"  steam new releases to count: {len(extra)}")
+        for a in extra:
+            n = steam_players(a)
+            if n is not None:
+                players[a] = n
+            time.sleep(0.25)
 
     # release date, description and header image come from the store (cached forever once found)
     budget = STEAM_DETAIL_BUDGET
@@ -326,13 +350,13 @@ def fetch_steam():
     games.sort(key=lambda g: -g["metric"])
     for i, g in enumerate(games[:TOP_N], 1):      # All: most played right now, any release date
         g["ranks"]["0"] = i
-    print(f"  steam all: {len(games)} games")
-    for w in WINDOWS:
-        c = cutoff(w)
-        inwin = [g for g in games if g["date"] and c <= g["date"] <= today]
-        for i, g in enumerate(inwin[:TOP_N], 1):
-            g["ranks"][str(w)] = i
-        print(f"  steam {w}mo: {len(inwin)} games")
+    print(f"  steam all time: {min(len(games), TOP_N)} games")
+    year = [g for g in games if g["date"] and oldest <= g["date"] <= today and g["metric"] >= STEAM_MIN_PLAYERS][:TOP_N]
+    for i, g in enumerate(year, 1):
+        for w in WINDOWS:                         # keep the 12-month rank in every window the game launched in
+            if g["date"] >= cutoff(w):
+                g["ranks"][str(w)] = i
+    print(f"  steam 12 months: {len(year)} games; in last month: {sum(1 for g in year if '1' in g['ranks'])}")
     save("steam.json", "steam", "most played", [g for g in games if g["ranks"]])
 
 
