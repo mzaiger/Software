@@ -28,18 +28,18 @@ let source = pref('software_source', 'github'); if (!SOURCES.some(s => s.k === s
 let months = parseInt(pref('software_months', '3'), 10); if (!MONTHS.includes(months)) months = 3;
 let layout = pref('software_layout', 'tile') === 'rows' ? 'rows' : 'tile';
 let sort = pref('software_sort', 'rank') === 'date' ? 'date' : 'rank';
-// favorites keep a snapshot of each item so they still show after it drops out of the current window
 const favs = new Map((() => { try { return Object.entries(JSON.parse(pref('software_favs2', '{}'))); } catch { return []; } })());
 const saveFavs = () => setPref('software_favs2', JSON.stringify(Object.fromEntries(favs)));
-let lookup = new Map();            // favKey -> item for the current source
-const store = {};                 // source -> loaded JSON (or null if missing)
+let lookup = new Map();
+const store = {};
 const expanded = new Set();
 const favKey = it => `${source}:${it.id}`;
 
 async function load(src, force) {
   if (!force && src in store) return store[src];
   try {
-    const r = await fetch(`data/${src}.json?v=${Date.now()}`, { cache:'no-store' });
+    // Replaced dynamic Date.now() query parameter with a clean static resource fetch
+    const r = await fetch(`data/${src}.json`, { cache:'default' });
     store[src] = r.ok ? await r.json() : null;
   } catch { store[src] = null; }
   return store[src];
@@ -99,7 +99,7 @@ function favEntries(items) {
 async function render() {
   const S = SOURCES.find(s => s.k === source), out = $('out');
   const d = await load(source);
-  if (S.k !== source) return;                       // source changed while loading
+  if (S.k !== source) return;
   $('lastUpdated').textContent = d ? `Last updated: ${ago(d.updated)}` : 'Last updated: not yet';
   const items = d ? d.items : [];
   let list = items.filter(it => it.ranks && it.ranks[months]).map(it => ({ ...it, rank: it.ranks[months] }));
@@ -109,7 +109,7 @@ async function render() {
   lookup = new Map([...favList, ...list].map(it => [favKey(it), it]));
   $('count').textContent = `${list.length} ${S.empty} ${months ? `launched in the last ${span(months)}` : 'of all time'} · ranked by ${S.hint.split(' among')[0].toLowerCase()}`;
   const metricName = d && d.metric === 'stars' ? 'Stars' : d && d.metric === 'most played' ? 'Most Played' : 'Apple Ranking';
-  const emptyMsg = `<div class="empty" style="grid-column:1 / -1;">${!d ? (location.protocol === 'file:' ? 'Browsers block this page from reading its data files when it is opened straight from disk. Open it through GitHub Pages, or run “python -m http.server” in this folder and visit http://localhost:8000.' : 'No data yet. Run the “Update software rankings” workflow once (Actions tab).') : 'Nothing in this window. Try a longer period or All.'}</div>`;
+  const emptyMsg = `<div class="empty" style="grid-column:1 / -1;">${!d ? 'No data yet.' : 'Nothing in this window.'}</div>`;
   const head = n => `<div class="fav-box-header"><span class="fav-box-title">★ Favorites<span class="fav-box-count">(${n})</span></span><button class="clear-btn" type="button" data-clear>Clear</button></div>`;
   if (layout === 'rows') {
     const box = favList.length ? `<div class="rows-fav-section">${head(favList.length)}${rowsTableHtml(favList, S, metricName)}</div>` : '';
@@ -161,7 +161,6 @@ function setup() {
     const b = $('refreshBtn'); b.disabled = true; b.textContent = 'Refreshing…';
     await load(source, true); await render(); b.disabled = false; b.textContent = 'Refresh';
   });
-  // broken image: swap in a plain "No Image" box (error events do not bubble, so listen in the capture phase)
   document.addEventListener('error', e => {
     const t = e.target;
     if (t && t.tagName === 'IMG' && t.closest('#out')) {
@@ -177,5 +176,4 @@ function setup() {
 
 (async function init() {
   setup(); renderControls(); await render();
-  setInterval(async () => { await load(source, true); render(); }, 30 * 60 * 1000);
 })();
