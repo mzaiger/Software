@@ -12,7 +12,7 @@ A static board of new software, ranked three ways, in the same style as the Movi
 
 | File | What it is |
 |---|---|
-| `index.html` | The page |
+| `index.html`, `style.css`, `app.js`, `favicon.svg` | The page: markup, styles, script, icon (keep all four together) |
 | `software.py` | Does all the work: `python software.py all` (or `github`, `steam`, `itunes`) |
 | `.github/workflows/software-daily.yml` | Daily at 06:17 UTC; also runnable from the Actions tab |
 | `data/github.json`, `steam.json`, `itunes.json` | One file per source |
