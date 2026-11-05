@@ -39,7 +39,7 @@ const favKey = it => `${source}:${it.id}`;
 async function load(src, force) {
   if (!force && src in store) return store[src];
   try {
-    const r = await fetch(`data/${src}.json?v=${Date.now()}`, { cache:'no-store' });
+    const r = await fetch(`data/${src}.json`);
     store[src] = r.ok ? await r.json() : null;
   } catch { store[src] = null; }
   return store[src];
@@ -177,5 +177,4 @@ function setup() {
 
 (async function init() {
   setup(); renderControls(); await render();
-  setInterval(async () => { await load(source, true); render(); }, 30 * 60 * 1000);
 })();
