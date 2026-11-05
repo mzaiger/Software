@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=0.8">
+<title>Software Board</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+<header>
+  <div class="eyebrow-row">
+    <p class="eyebrow">Software Board · GitHub · Steam · iTunes</p>
+    <div class="updated-row"><span id="lastUpdated">Last updated: —</span><button class="refresh-btn" id="refreshBtn" type="button">Refresh</button></div>
+  </div>
+  <h1>Software Board</h1>
+  <p class="sub">The top 100 new software of the last 12 months, plus an all-time top 100, ranked by <b>GitHub stars</b>, <b>Steam players right now</b>, or <b>Apple App Store chart position</b>. Pick a source, choose when it launched (1, 2, 3, 6 or 12 months, which shows that period&rsquo;s items from the year&rsquo;s top 100, or All for all time), switch between tiles and rows, and sort by ranking or newest.</p>
+</header>
+<main>
+  <div class="controls">
+    <div class="tabs sources" id="sources"></div>
+    <div class="timeframes"><div class="tabs" id="tabs"></div></div>
+    <div class="sortbox">
+      <div class="sort"><span>Layout</span>
+        <button class="sort-btn" data-layout="tile">Tiles</button>
+        <button class="sort-btn" data-layout="rows">Rows</button>
+        <span class="gap">Sort</span>
+        <button class="sort-btn" data-sort="rank">Ranking</button>
+        <button class="sort-btn" data-sort="date">Newest</button>
+      </div>
+    </div>
+  </div>
+  <p class="count" id="count"></p>
+  <div id="out"></div>
+  <p class="foot">Data from the free, keyless <a href="https://docs.github.com/en/rest/search/search#search-repositories">GitHub REST API</a>, <a href="https://steamcommunity.com/dev">Steam</a> charts and store APIs, and Apple&rsquo;s iTunes feeds and lookup API. Rank is the position in the top 100 for the last 12 months, so a 1 month view can show items like #34 or #71. All is the all-time top 100 for that source, whatever the launch date. GitHub date is the repository creation date, which is not always when the software first shipped. Steam &ldquo;Most Played&rdquo; is players in game at the last update, and only games on Steam&rsquo;s Most Played chart (top 100) are listed, so the 1 to 12 month views only show recent games that are already on that chart. Apple ranking is the position in the US Top Free Apps chart; only apps that are in the chart can appear. GitHub, Steam and Apple are not affiliated with this site.</p>
+</main>
+<script src="app.js"></script>
+
+</body>
+</html>
