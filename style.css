@@ -23,7 +23,6 @@
   .tabs.sources .tab-btn { font-size:14px; padding:8px 18px; }
   .timeframes .tabs { display:grid; grid-template-columns:repeat(6,auto); }
   .timeframes .tab-btn { text-align:center; }
-  .sortbox { display:flex; flex-direction:column; align-items:flex-start; gap:6px; max-width:100%; }
 .sortbox {
   display: flex;
   flex-wrap: wrap;
