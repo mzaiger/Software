@@ -6,7 +6,7 @@ A static board of new software, ranked three ways, in the same style as the Movi
 |---|---|---|---|
 | GitHub | Most stars | Repo created | `api.github.com/search/repositories` (`created:>=`, `sort=stars`) |
 | Steam | Most played (players in game now) | Game release date | `ISteamChartsService` (Most Played chart), store `appdetails` |
-| iTunes | Apple ranking (Top Free Apps chart position) | App release date | `itunes.apple.com/.../topfreeapplications` feed and `itunes.apple.com/lookup` |
+| App Store | Apple ranking (Top Free Apps chart position) | App release date | `itunes.apple.com/.../topfreeapplications` feed and `itunes.apple.com/lookup` |
 
 ## Files
 
@@ -21,12 +21,12 @@ A static board of new software, ranked three ways, in the same style as the Movi
 
 ## The page
 
-* **Source:** GitHub, Steam, iTunes.
+* **Source:** GitHub, Steam, App Store.
 * **Time frame:** each source gets one **top 100 for the last 12 months** plus an **all-time top 100**. **12 Months** shows that whole list. **1, 2, 3, 6 Months** show only the items from that list that launched in that period, and each keeps its rank in the 12-month top 100 (a 1 month view can show #34 or #71). **All** is the all-time top 100 (most-starred repos, most-played Steam games right now, Apple chart top 100).
 * **Links:** every item links to its own page (GitHub repo, Steam store page, App Store page) from the title, the image, and an Open button (tiles) or Link column (rows).
 * **Layout:** Tiles or Rows. **Sort:** Ranking or Newest. Tick the ★ on any item to pin it in a **Favorites** box at the top (like SlickDealsTracker). Favorites are kept in your browser, shown for the selected source, and stay even after an item leaves the window; **Clear** empties that source's box.
 * **Bottom of each tile (next to the date):** stars, players now, or Apple chart position.
-* **Images:** GitHub owner avatar (org avatar for org repos; GitHub's social card if there is no avatar), Steam header image, iTunes app icon.
+* **Images:** GitHub owner avatar (org avatar for org repos; GitHub's social card if there is no avatar), Steam header image, App Store app icon.
 * **Descriptions:** GitHub repo description (falls back to its topics, then "No description provided."), Steam short description, App Store description.
 
 ## JSON format
