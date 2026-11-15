@@ -4,7 +4,7 @@ const SOURCES = [
     metric: it => `<b>★ ${fmtNum(it.metric)}</b> stars`, rowMetric: it => `★ ${fmtNum(it.metric)} stars`, open:'Open on GitHub', short:'GitHub', empty:'repos' },
   { k:'steam',  l:'Steam',  imgClass:'steam',  domain:'store.steampowered.com', hint:'Most players in game now among games released in the last 12 months',
     metric: it => `<b>🎮 ${fmtNum(it.metric)}</b> playing`, rowMetric: it => `🎮 ${fmtNum(it.metric)} playing`, open:'Open on Steam', short:'Steam', empty:'games' },
-  { k:'itunes', l:'iTunes', imgClass:'itunes', domain:'apps.apple.com', hint:'Position in Apple’s Top Free Apps chart among apps released in the last 12 months',
+  { k:'itunes', l:'App Store', imgClass:'itunes', domain:'apps.apple.com', hint:'Position in Apple’s Top Free Apps chart among apps released in the last 12 months',
     metric: it => `<b>Apple #${it.metric}</b> chart`, rowMetric: it => `Apple #${it.metric}`, open:'Open on App Store', short:'App Store', empty:'apps' },
 ];
 const MONTHS = [1, 2, 3, 6, 12, 0];   // 0 = All
