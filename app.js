@@ -22,7 +22,7 @@ const span = m => `${m} month${m === 1 ? '' : 's'}`;
 const favIco = d => `<img class="ico" src="https://www.google.com/s2/favicons?domain=${esc(d)}&sz=64" alt="" width="20" height="20" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`;
 // Google Play search for an item's title (favicon-only button, shown on every source)
 const playUrl = it => `https://play.google.com/store/search?q=${encodeURIComponent(it.title || '')}&c=apps`;
-const playBtn = (it, cls) => `<a class="${cls}" href="${esc(playUrl(it))}" target="_blank" rel="noopener noreferrer" title="Search Google Play" aria-label="Search Google Play">${favIco('play.google.com')}</a>`;
+const playBtn = (it, cls, label) => `<a class="${cls}" href="${esc(playUrl(it))}" target="_blank" rel="noopener noreferrer" title="Search Google Play">${favIco('play.google.com')}${label} <span>↗</span></a>`;
 function ago(iso) {
   const t = new Date(iso).getTime(); if (!Number.isFinite(t)) return '—';
   const min = Math.max(0, Math.round((Date.now() - t) / 60000));
@@ -66,7 +66,7 @@ function tileHtml(it, S) {
       <p class="title">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>` : esc(it.title)}</p>
       <p class="desc${open ? '' : ' clamp'}">${esc(it.desc || 'No description provided.')}</p>
       <button class="more" type="button" data-more="${esc(key)}"${open ? '' : ' hidden'}>${open ? 'See less' : 'See more'}</button>
-      <div class="links">${url ? `<a class="open-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${favIco(S.domain)}${esc(S.open)} <span>↗</span></a>` : ''}${playBtn(it, 'play-link')}</div>
+      <div class="links">${url ? `<a class="open-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${favIco(S.domain)}${esc(S.open)} <span>↗</span></a>` : ''}${playBtn(it, 'open-link', 'Search Google Play')}</div>
       <div class="meta"><span>${esc(fmtDate(it.date))}</span><span>${S.metric(it)}</span></div>
     </div>
   </article>`;
@@ -82,7 +82,7 @@ function rowHtml(it, S) {
     <span class="row-desc">${esc(it.desc || '—')}</span>
     <span class="row-date">${esc(fmtDate(it.date))}</span>
     <span class="row-metric">${esc(S.rowMetric(it))}</span>
-    <span class="row-links">${url ? `<a class="row-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${favIco(S.domain)}${esc(S.short)} <span>↗</span></a>` : '<span class="row-date">—</span>'}${playBtn(it, 'row-play')}</span>
+    <span class="row-links">${url ? `<a class="row-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${favIco(S.domain)}${esc(S.short)} <span>↗</span></a>` : '<span class="row-date">—</span>'}${playBtn(it, 'row-link', 'Play')}</span>
   </div>`;
 }
 
