@@ -121,15 +121,13 @@
   }
   @media (prefers-reduced-motion:reduce) { .fav-star, .open-link, .row-item { transition:none; } }
 
-/* Google Play search button (favicon only) — append to the end of style.css */
-  .links { display:flex; gap:6px; margin-top:auto; }
-  .links .open-link { flex:1 1 0; min-width:0; margin-top:0; }
-  .play-link { display:flex; align-items:center; justify-content:center; flex:none; width:40px; height:40px; background:var(--panel); border:1px solid var(--line); border-radius:8px; text-decoration:none; transition:border-color .15s ease, background .15s ease; }
-  .play-link:hover { border-color:var(--blue); background:#fff; }
+/* Google Play search button under the store button — append to the end of style.css */
+  .links { display:flex; flex-direction:column; gap:6px; margin-top:auto; }
+  .links .open-link { width:100%; margin-top:0; }
   .row-links { display:flex; gap:6px; align-items:center; }
-  .row-links .row-link { flex:1 1 0; min-width:0; }
-  .row-play { display:flex; align-items:center; justify-content:center; flex:none; width:34px; height:34px; background:var(--panel); border:1px solid var(--line); border-radius:8px; text-decoration:none; }
-  .row-play:hover { border-color:var(--blue); background:#fff; }
+  .row-links .row-link { flex:1 1 0; min-width:0; padding:0 6px; }
+  .rows-table { min-width:1090px; }
+  .rows-header-row, .row-item { grid-template-columns:34px 84px 52px minmax(150px,1.2fr) minmax(220px,2fr) 108px 130px 222px; }
   .row-play .ico { width:16px; height:16px; border-radius:3px; }
   .rows-table { min-width:1032px; }
   .rows-header-row, .row-item { grid-template-columns:34px 84px 52px minmax(150px,1.2fr) minmax(220px,2fr) 108px 130px 164px; }
