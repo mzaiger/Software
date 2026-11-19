@@ -5,7 +5,7 @@ const SOURCES = [
   { k:'steam',  l:'Steam',  imgClass:'steam',  domain:'store.steampowered.com', hint:'Most players in game now among games released in the last 12 months',
     metric: it => `<b>🎮 ${fmtNum(it.metric)}</b> playing`, rowMetric: it => `🎮 ${fmtNum(it.metric)} playing`, open:'Open on Steam', short:'Steam', empty:'games' },
   { k:'itunes', l:'App Store', imgClass:'itunes', domain:'apps.apple.com', hint:'Position in Apple’s Top Free Apps chart among apps released in the last 12 months',
-    metric: it => `<b>Apple #${it.metric}</b> chart`, rowMetric: it => `Apple #${it.metric}`, open:'Open on App Store', short:'App Store', empty:'apps' },
+    metric: it => `<b>Apple #${it.metric}</b> chart`, rowMetric: it => `Apple #${it.metric}`, open:'Open on App Store', short:'App Store', empty:'apps', play:true },
 ];
 const MONTHS = [1, 2, 3, 6, 12, 0];   // 0 = All
 const rankTip = () => months ? 'Rank in the top 100 of the last 12 months' : 'Rank in the all-time top 100';
@@ -20,7 +20,7 @@ const fmtDate = d => d ? new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', 
 const span = m => `${m} month${m === 1 ? '' : 's'}`;
 // Favicon shown inside the link buttons (class "ico" keeps it out of the broken-image handler below)
 const favIco = d => `<img class="ico" src="https://www.google.com/s2/favicons?domain=${esc(d)}&sz=64" alt="" width="20" height="20" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`;
-// Google Play search for an item's title (favicon-only button, shown on every source)
+// Google Play search for an item's title (shown on App Store items only)
 const playUrl = it => `https://play.google.com/store/search?q=${encodeURIComponent(it.title || '')}&c=apps`;
 const playBtn = (it, cls, label) => `<a class="${cls}" href="${esc(playUrl(it))}" target="_blank" rel="noopener noreferrer" title="Search Google Play">${favIco('play.google.com')}${label} <span>↗</span></a>`;
 function ago(iso) {
@@ -66,7 +66,7 @@ function tileHtml(it, S) {
       <p class="title">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>` : esc(it.title)}</p>
       <p class="desc${open ? '' : ' clamp'}">${esc(it.desc || 'No description provided.')}</p>
       <button class="more" type="button" data-more="${esc(key)}"${open ? '' : ' hidden'}>${open ? 'See less' : 'See more'}</button>
-      <div class="links">${url ? `<a class="open-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${favIco(S.domain)}${esc(S.open)} <span>↗</span></a>` : ''}${playBtn(it, 'open-link', 'Search Google Play')}</div>
+      <div class="links">${url ? `<a class="open-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${favIco(S.domain)}${esc(S.open)} <span>↗</span></a>` : ''}${S.play ? playBtn(it, 'open-link', 'Search Google Play') : ''}</div>
       <div class="meta"><span>${esc(fmtDate(it.date))}</span><span>${S.metric(it)}</span></div>
     </div>
   </article>`;
@@ -82,12 +82,12 @@ function rowHtml(it, S) {
     <span class="row-desc">${esc(it.desc || '—')}</span>
     <span class="row-date">${esc(fmtDate(it.date))}</span>
     <span class="row-metric">${esc(S.rowMetric(it))}</span>
-    <span class="row-links">${url ? `<a class="row-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${favIco(S.domain)}${esc(S.short)} <span>↗</span></a>` : '<span class="row-date">—</span>'}${playBtn(it, 'row-link', 'Play')}</span>
+    <span class="row-links">${url ? `<a class="row-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${favIco(S.domain)}${esc(S.short)} <span>↗</span></a>` : '<span class="row-date">—</span>'}${S.play ? playBtn(it, 'row-link', 'Play') : ''}</span>
   </div>`;
 }
 
 function rowsTableHtml(list, S, metricName) {
-  return `<div class="rows-wrap"><div class="rows-table"><div class="rows-header-row"><span></span><span>Image</span><span>Rank</span><span>Name</span><span>Description</span><span>Launched</span><span>${esc(metricName)}</span><span>Link</span></div>${list.map(it => rowHtml(it, S)).join('')}</div></div>`;
+  return `<div class="rows-wrap"><div class="rows-table${S.play ? ' has-play' : ''}"><div class="rows-header-row"><span></span><span>Image</span><span>Rank</span><span>Name</span><span>Description</span><span>Launched</span><span>${esc(metricName)}</span><span>Link</span></div>${list.map(it => rowHtml(it, S)).join('')}</div></div>`;
 }
 
 function favEntries(items) {

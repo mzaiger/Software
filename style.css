@@ -70,6 +70,10 @@
   .meta { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--text-dim); }
   .meta b { color:var(--text); font-weight:600; }
 
+  /* store button + Google Play search button (App Store items) stacked in a column */
+  .links { display:flex; flex-direction:column; gap:6px; margin-top:auto; }
+  .links .open-link { width:100%; margin-top:0; }
+
   /* rows */
   .rows-wrap { overflow-x:auto; }
   .rows-table { display:flex; flex-direction:column; gap:6px; min-width:992px; }
@@ -96,6 +100,12 @@
   .row-fav .fav-star { font-size:18px; color:var(--line); }
   .row-fav input:checked ~ .fav-star { color:var(--warm); transform:scale(1.1); }
 
+  /* rows: source button + Google Play search button side by side (App Store items) */
+  .row-links { display:flex; gap:6px; align-items:center; }
+  .row-links .row-link { flex:1 1 0; min-width:0; padding:0 6px; }
+  .rows-table.has-play { min-width:1090px; }
+  .has-play .rows-header-row, .has-play .row-item { grid-template-columns:34px 84px 52px minmax(150px,1.2fr) minmax(220px,2fr) 108px 130px 222px; }
+
   .fav-box { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px 14px; display:flex; flex-direction:column; gap:10px; }
   .fav-box-header { display:flex; align-items:center; justify-content:space-between; }
   .fav-box-title { font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:.04em; text-transform:uppercase; font-size:13px; color:var(--text); }
@@ -120,14 +130,3 @@
     .sort-btn { padding:6px 8px; }
   }
   @media (prefers-reduced-motion:reduce) { .fav-star, .open-link, .row-item { transition:none; } }
-
-/* Google Play search button under the store button — append to the end of style.css */
-  .links { display:flex; flex-direction:column; gap:6px; margin-top:auto; }
-  .links .open-link { width:100%; margin-top:0; }
-  .row-links { display:flex; gap:6px; align-items:center; }
-  .row-links .row-link { flex:1 1 0; min-width:0; padding:0 6px; }
-  .rows-table { min-width:1090px; }
-  .rows-header-row, .row-item { grid-template-columns:34px 84px 52px minmax(150px,1.2fr) minmax(220px,2fr) 108px 130px 222px; }
-  .row-play .ico { width:16px; height:16px; border-radius:3px; }
-  .rows-table { min-width:1032px; }
-  .rows-header-row, .row-item { grid-template-columns:34px 84px 52px minmax(150px,1.2fr) minmax(220px,2fr) 108px 130px 164px; }
